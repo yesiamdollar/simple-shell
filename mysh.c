@@ -343,7 +343,7 @@ int get_command_type(char *command) {
         return COMMAND_JOBS;
     } else if (strcmp(command, "fg") == 0) {
         return COMMAND_FG;
-    } else if (strcmp(command, "bg1") == 0) {
+    }/* else if (strcmp(command, "bg1") == 0) {
         return COMMAND_BG;
     } else if (strcmp(command, "kill") == 0) {
         return COMMAND_KILL;
@@ -351,7 +351,7 @@ int get_command_type(char *command) {
         return COMMAND_EXPORT;
     } else if (strcmp(command, "unset") == 0) {
         return COMMAND_UNSET;
-    } else {
+    } */else {
         return COMMAND_EXTERNAL;
     }
 }
@@ -370,27 +370,27 @@ char* helper_strtrim(char* line) {
     return head;
 }
 
-void mysh_update_cwd_info() {
+void ft_update_cwd_info() {
     getcwd(shell->cur_dir, sizeof(shell->cur_dir));
 }
 
-int mysh_cd(int argc, char** argv) {
+int ft_cd(int argc, char** argv) {
     if (argc == 1) {
         chdir(shell->pw_dir);
-        mysh_update_cwd_info();
+        ft_update_cwd_info();
         return 0;
     }
 
     if (chdir(argv[1]) == 0) {
-        mysh_update_cwd_info();
+        ft_update_cwd_info();
         return 0;
     } else {
-        printf("mysh: cd %s: No such file or directory\n", argv[1]);
+        printf("shell: cd %s: No such file or directory\n", argv[1]);
         return 0;
     }
 }
 
-int mysh_jobs(int argc, char **argv) {
+int ft_jobs(int argc, char **argv) {
     int i;
 
     for (i = 0; i < NR_JOBS; i++) {
@@ -402,7 +402,7 @@ int mysh_jobs(int argc, char **argv) {
     return 0;
 }
 
-int mysh_fg(int argc, char **argv) {
+int ft_fg(int argc, char **argv) {
     if (argc < 2) {
         printf("usage: fg <pid>\n");
         return -1;
@@ -416,7 +416,7 @@ int mysh_fg(int argc, char **argv) {
         job_id = atoi(argv[1] + 1);
         pid = get_pgid_by_job_id(job_id);
         if (pid < 0) {
-            printf("mysh: fg %s: no such job\n", argv[1]);
+            printf("shell: fg %s: no such job\n", argv[1]);
             return -1;
         }
     } else {
@@ -424,7 +424,7 @@ int mysh_fg(int argc, char **argv) {
     }
 
     if (kill(-pid, SIGCONT) < 0) {
-        printf("mysh: fg %d: job not found\n", pid);
+        printf("shell: fg %d: job not found\n", pid);
         return -1;
     }
 
@@ -447,95 +447,95 @@ int mysh_fg(int argc, char **argv) {
     return 0;
 }
 
-int mysh_bg(int argc, char **argv) {
-    if (argc < 2) {
-        printf("usage: bg <pid>\n");
-        return -1;
-    }
+// int mysh_bg(int argc, char **argv) {
+//     if (argc < 2) {
+//         printf("usage: bg <pid>\n");
+//         return -1;
+//     }
 
-    pid_t pid;
-    int job_id = -1;
+//     pid_t pid;
+//     int job_id = -1;
 
-    if (argv[1][0] == '%') {
-        job_id = atoi(argv[1] + 1);
-        pid = get_pgid_by_job_id(job_id);
-        if (pid < 0) {
-            printf("mysh: bg %s: no such job\n", argv[1]);
-            return -1;
-        }
-    } else {
-        pid = atoi(argv[1]);
-    }
+//     if (argv[1][0] == '%') {
+//         job_id = atoi(argv[1] + 1);
+//         pid = get_pgid_by_job_id(job_id);
+//         if (pid < 0) {
+//             printf("shell: bg %s: no such job\n", argv[1]);
+//             return -1;
+//         }
+//     } else {
+//         pid = atoi(argv[1]);
+//     }
 
-    if (kill(-pid, SIGCONT) < 0) {
-        printf("mysh: bg %d: job not found\n", pid);
-        return -1;
-    }
+//     if (kill(-pid, SIGCONT) < 0) {
+//         printf("shell: bg %d: job not found\n", pid);
+//         return -1;
+//     }
 
-    if (job_id > 0) {
-        set_job_status(job_id, STATUS_CONTINUED);
-        print_job_status(job_id);
-    }
+//     if (job_id > 0) {
+//         set_job_status(job_id, STATUS_CONTINUED);
+//         print_job_status(job_id);
+//     }
 
-    return 0;
-}
+//     return 0;
+// }
 
-int mysh_kill(int argc, char **argv) {
-    if (argc < 2) {
-        printf("usage: kill <pid>\n");
-        return -1;
-    }
+// int mysh_kill(int argc, char **argv) {
+//     if (argc < 2) {
+//         printf("usage: kill <pid>\n");
+//         return -1;
+//     }
 
-    pid_t pid;
-    int job_id = -1;
+//     pid_t pid;
+//     int job_id = -1;
 
-    if (argv[1][0] == '%') {
-        job_id = atoi(argv[1] + 1);
-        pid = get_pgid_by_job_id(job_id);
-        if (pid < 0) {
-            printf("mysh: kill %s: no such job\n", argv[1]);
-            return -1;
-        }
-        pid = -pid;
-    } else {
-        pid = atoi(argv[1]);
-    }
+//     if (argv[1][0] == '%') {
+//         job_id = atoi(argv[1] + 1);
+//         pid = get_pgid_by_job_id(job_id);
+//         if (pid < 0) {
+//             printf("shell: kill %s: no such job\n", argv[1]);
+//             return -1;
+//         }
+//         pid = -pid;
+//     } else {
+//         pid = atoi(argv[1]);
+//     }
 
-    if (kill(pid, SIGKILL) < 0) {
-        printf("mysh: kill %d: job not found\n", pid);
-        return 0;
-    }
+//     if (kill(pid, SIGKILL) < 0) {
+//         printf("shell: kill %d: job not found\n", pid);
+//         return 0;
+//     }
 
-    if (job_id > 0) {
-        set_job_status(job_id, STATUS_TERMINATED);
-        print_job_status(job_id);
-        if (wait_for_job(job_id) >= 0) {
-            remove_job(job_id);
-        }
-    }
+//     if (job_id > 0) {
+//         set_job_status(job_id, STATUS_TERMINATED);
+//         print_job_status(job_id);
+//         if (wait_for_job(job_id) >= 0) {
+//             remove_job(job_id);
+//         }
+//     }
 
-    return 1;
-}
+//     return 1;
+// }
 
-int mysh_export(int argc, char **argv) {
-    if (argc < 2) {
-        printf("usage: export KEY=VALUE\n");
-        return -1;
-    }
+// int mysh_export(int argc, char **argv) {
+//     if (argc < 2) {
+//         printf("usage: export KEY=VALUE\n");
+//         return -1;
+//     }
 
-    return putenv(argv[1]);
-}
+//     return putenv(argv[1]);
+// }
 
-int mysh_unset(int argc, char **argv) {
-    if (argc < 2) {
-        printf("usage: unset KEY\n");
-        return -1;
-    }
+// int mysh_unset(int argc, char **argv) {
+//     if (argc < 2) {
+//         printf("usage: unset KEY\n");
+//         return -1;
+//     }
 
-    return unsetenv(argv[1]);
-}
+//     return unsetenv(argv[1]);
+// }
 
-int mysh_exit() {
+int ft_exit() {
     printf("Goodbye!\n");
     exit(0);
 }
@@ -563,34 +563,34 @@ void sigint_handler(int signal) {
     printf("\n");
 }
 
-int mysh_execute_builtin_command(struct process *proc) {
+int ft_execute_builtin_command(struct process *proc) {
     int status = 1;
 
     switch (proc->type) {
         case COMMAND_EXIT:
-            mysh_exit();
+            ft_exit();
             break;
         case COMMAND_CD:
-            mysh_cd(proc->argc, proc->argv);
+            ft_cd(proc->argc, proc->argv);
             break;
         case COMMAND_JOBS:
-            mysh_jobs(proc->argc, proc->argv);
+            ft_jobs(proc->argc, proc->argv);
             break;
         case COMMAND_FG:
-            mysh_fg(proc->argc, proc->argv);
+            ft_fg(proc->argc, proc->argv);
             break;
-        case COMMAND_BG:
-            mysh_bg(proc->argc, proc->argv);
-            break;
-        case COMMAND_KILL:
-            mysh_kill(proc->argc, proc->argv);
-            break;
-        case COMMAND_EXPORT:
-            mysh_export(proc->argc, proc->argv);
-            break;
-        case COMMAND_UNSET:
-            mysh_unset(proc->argc, proc->argv);
-            break;
+        // case COMMAND_BG:
+        //     mysh_bg(proc->argc, proc->argv);
+        //     break;
+        // case COMMAND_KILL:
+        //     mysh_kill(proc->argc, proc->argv);
+        //     break;
+        // case COMMAND_EXPORT:
+        //     mysh_export(proc->argc, proc->argv);
+        //     break;
+        // case COMMAND_UNSET:
+        //     mysh_unset(proc->argc, proc->argv);
+        //     break;
         default:
             status = 0;
             break;
@@ -599,9 +599,9 @@ int mysh_execute_builtin_command(struct process *proc) {
     return status;
 }
 
-int mysh_launch_process(struct job *job, struct process *proc, int in_fd, int out_fd, int mode) {
+int ft_launch_process(struct job *job, struct process *proc, int in_fd, int out_fd, int mode) {
     proc->status = STATUS_RUNNING;
-    if (proc->type != COMMAND_EXTERNAL && mysh_execute_builtin_command(proc)) {
+    if (proc->type != COMMAND_EXTERNAL && ft_execute_builtin_command(proc)) {
         return 0;
     }
 
@@ -639,7 +639,7 @@ int mysh_launch_process(struct job *job, struct process *proc, int in_fd, int ou
         }
 
         if (execvp(proc->argv[0], proc->argv) < 0) {
-            printf("mysh: %s: command not found\n", proc->argv[0]);
+            printf("shell: %s: command not found\n", proc->argv[0]);
             exit(0);
         }
 
@@ -665,7 +665,7 @@ int mysh_launch_process(struct job *job, struct process *proc, int in_fd, int ou
     return status;
 }
 
-int mysh_launch_job(struct job *job) {
+int ft_launch_job(struct job *job) {
     struct process *proc;
     int status = 0, in_fd = 0, fd[2], job_id = -1;
 
@@ -682,14 +682,14 @@ int mysh_launch_job(struct job *job) {
         if (proc == job->root && proc->input_path != NULL) {
             in_fd = open(proc->input_path, O_RDONLY);
             if (in_fd < 0) {
-                printf("mysh: no such file or directory: %s\n", proc->input_path);
+                printf("shell: no such file or directory: %s\n", proc->input_path);
                 remove_job(job_id);
                 return -1;
             }
         }
         if (proc->next != NULL) {
             pipe(fd);
-            status = mysh_launch_process(job, proc, in_fd, fd[1], PIPELINE_EXECUTION);
+            status = ft_launch_process(job, proc, in_fd, fd[1], PIPELINE_EXECUTION);
             close(fd[1]);
             in_fd = fd[0];
         } else {
@@ -710,7 +710,7 @@ int mysh_launch_job(struct job *job) {
                     }
                 }
             }
-            status = mysh_launch_process(job, proc, in_fd, out_fd, job->mode);
+            status = ft_launch_process(job, proc, in_fd, out_fd, job->mode);
         }
     }
 
@@ -731,7 +731,7 @@ void print_tokens(char **tokens)
         printf("token: %s\n", *tokens++);
 }
 
-struct process* mysh_parse_command_segment(char *segment) {
+struct process* ft_parse_command_segment(char *segment) {
     int bufsize = TOKEN_BUFSIZE;
     int position = 0;
     char *command = strdup(segment);
@@ -740,42 +740,31 @@ struct process* mysh_parse_command_segment(char *segment) {
     tokens[bufsize] = NULL;
     bool    is_valid = true;
     if (!tokens) {
-        fprintf(stderr, "mysh: allocation error\n");
+        fprintf(stderr, "shell: allocation error\n");
         exit(EXIT_FAILURE);
     }
     token = strtok(segment, TOKEN_DELIMITERS);
     while (token != NULL) {
         glob_t glob_buffer;
         int glob_count = 0;
-        if (strchr(token, '*') != NULL || strchr(token, '?') != NULL) {
-            glob(token, 0, NULL, &glob_buffer);
-            glob_count = glob_buffer.gl_pathc;
-        }
 
-        if (position + glob_count >= bufsize) {
+        if (position >= bufsize) {
             bufsize += TOKEN_BUFSIZE;
-            bufsize += glob_count;
+            for (int z = 0; z <= bufsize; z++)
+                free(tokens[z]);
+            free(tokens);
             tokens = (char**) realloc(tokens, (bufsize + 1)* sizeof(char*));
             if (!tokens) {
-                fprintf(stderr, "mysh: allocation error\n");
+                fprintf(stderr, "shell: allocation error\n");
                 exit(EXIT_FAILURE);
             } else {
                 tokens[bufsize] = NULL;
             }
         }
 
-        if (glob_count > 0) {
-            int i;
-            for (i = 0; i < glob_count; i++) {
-                tokens[position++] = strdup(glob_buffer.gl_pathv[i]);
-            }
-            globfree(&glob_buffer);
-            tokens[position] = NULL;
-        } else {
-            tokens[position] = token;
-            position++;
-            tokens[position] = NULL;
-        }
+        tokens[position] = token;
+        position++;
+        tokens[position] = NULL;
 
         token = strtok(NULL, TOKEN_DELIMITERS);
     }
@@ -820,7 +809,7 @@ struct process* mysh_parse_command_segment(char *segment) {
                     out_type = ONE_SHIFT;
                     i++;
                 }
-            } else if (strlen(tokens[i]) == 2 && tokens[i][0] == '>'){
+            } else if (strlen(tokens[i]) == 2 && tokens[i][1] == '>'){
                 if (tokens[i + 1] != NULL){
                     output_path = (char *) malloc((strlen(tokens[i + 1]) + 1) * sizeof(char));
                     strcpy(output_path, tokens[i + 1]);
@@ -857,7 +846,7 @@ struct process* mysh_parse_command_segment(char *segment) {
     return new_proc;
 }
 
-int    pipe_check(char *head, char *pos){
+int    pipe_check(char *head){
     while (*head){
         if (*head != '\0' && *head != ' ')
             return 0;
@@ -866,12 +855,12 @@ int    pipe_check(char *head, char *pos){
     return 1;
 }
 
-struct job* mysh_parse_command(char *line) {
+struct job* ft_parse_command(char *line) {
     line = helper_strtrim(line);
     char *command = strdup(line);
 
     struct process *root_proc = NULL, *proc = NULL;
-    char *line_cursor = line, *c = line, *seg;
+    char *line_cursor = line, *c = line, *seg = NULL;
     int seg_len = 0, mode = FOREGROUND_EXECUTION;
 
     if (line[strlen(line) - 1] == '&') {
@@ -879,17 +868,19 @@ struct job* mysh_parse_command(char *line) {
         line[strlen(line) - 1] = '\0';
     }
     if (*c == '|')
+    {
+        free(command);
         return NULL;
+    }
     while (1) {
-        char *g = c;
         if (*c == '\0' || *c == '|') {
-            if (*c == '|' && pipe_check(c + 1, g))
+            if (*c == '|' && pipe_check(c + 1))
                 return NULL;
             seg = (char*) malloc((seg_len + 1) * sizeof(char));
             strncpy(seg, line_cursor, seg_len);
             seg[seg_len] = '\0';
 
-            struct process* new_proc = mysh_parse_command_segment(seg);
+            struct process* new_proc = ft_parse_command_segment(seg);
             if (!root_proc) {
                 root_proc = new_proc;
                 proc = root_proc;
@@ -905,6 +896,8 @@ struct job* mysh_parse_command(char *line) {
                 seg_len = 0;
                 continue;
             } else {
+                if (seg)
+                    free(seg);
                 break;
             }
         } else {
@@ -921,14 +914,14 @@ struct job* mysh_parse_command(char *line) {
     return new_job;
 }
 
-char* mysh_read_line() {
+char* ft_read_line() {
     int bufsize = COMMAND_BUFSIZE;
     int position = 0;
     char *buffer = malloc(sizeof(char) * bufsize);
     int c;
 
     if (!buffer) {
-        fprintf(stderr, "mysh: allocation error\n");
+        fprintf(stderr, "shell: allocation error\n");
         exit(EXIT_FAILURE);
     }
 
@@ -947,43 +940,54 @@ char* mysh_read_line() {
             bufsize += COMMAND_BUFSIZE;
             buffer = realloc(buffer, bufsize);
             if (!buffer) {
-                fprintf(stderr, "mysh: allocation error\n");
+                fprintf(stderr, "shell: allocation error\n");
                 exit(EXIT_FAILURE);
             }
         }
     }
 }
 
-void mysh_print_promt() {
-    printf(COLOR_CYAN "%s" COLOR_NONE " in " COLOR_YELLOW "%s" COLOR_NONE "\n", shell->cur_user, shell->cur_dir);
-    printf(COLOR_RED "mysh>" COLOR_NONE " ");
+void print_promt() {
+    int last = 0;
+    char *s;
+    if (strlen(shell->cur_dir) == 1){
+       printf("[shell %s]$ ", shell->cur_dir);
+        return ;
+    } else {
+        for (int i = 0; i < strlen(shell->cur_dir); i++)
+            if (shell->cur_dir[i] == '/')
+                last = i;
+        s = strdup(shell->cur_dir + last);
+    }
+    printf("[shell %s]$ ", s + 1);
+    free(s);
 }
 
-void mysh_print_welcome() {
-    printf("Welcome to mysh by 0456018!\n");
-}
 
-void mysh_loop() {
+void shell_loop() {
     char *line;
     struct job *job;
     int status = 1;
 
     while (1) {
-        mysh_print_promt();
-        line = mysh_read_line();
+        print_promt();
+        line = ft_read_line();
         if (strlen(line) == 0) {
             check_zombie();
             continue;
         }
-        job = mysh_parse_command(line);
+        job = ft_parse_command(line);
+        free(line);
         if (job)
-            status = mysh_launch_job(job);
+        {
+            status = ft_launch_job(job);
+        }
         else
             fprintf(stderr, "Error: invalid command\n");
     }
 }
 
-void mysh_init() {
+void ft_init() {
     struct sigaction sigint_action = {
         .sa_handler = &sigint_handler,
         .sa_flags = 0
@@ -1010,13 +1014,12 @@ void mysh_init() {
         shell->jobs[i] = NULL;
     }
 
-    mysh_update_cwd_info();
+    ft_update_cwd_info();
 }
 
 int main(int argc, char **argv) {
-    mysh_init();
-    mysh_print_welcome();
-    mysh_loop();
+    ft_init();
+    shell_loop();
 
     return EXIT_SUCCESS;
 }
