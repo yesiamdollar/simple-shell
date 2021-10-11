@@ -27,10 +27,6 @@
 #define COMMAND_CD 2
 #define COMMAND_JOBS 3
 #define COMMAND_FG 4
-#define COMMAND_BG 5
-#define COMMAND_KILL 6
-#define COMMAND_EXPORT 7
-#define COMMAND_UNSET 8
 
 #define STATUS_RUNNING 0
 #define STATUS_DONE 1
@@ -372,24 +368,28 @@ void ft_update_cwd_info() {
 }
 
 int ft_cd(int argc, char** argv) {
-    if (argc == 1) {
-        chdir(shell->pw_dir);
-        ft_update_cwd_info();
-        return 0;
+    if (argc == 1 || argc > 2) {
+        fprintf(stderr ,"Error: invalid command\n");
+        return -1;
     }
 
     if (chdir(argv[1]) == 0) {
         ft_update_cwd_info();
         return 0;
     } else {
-        printf("shell: cd %s: No such file or directory\n", argv[1]);
+        fprintf(stderr ,"Error: invalid directory");
         return 0;
     }
 }
 
 int ft_jobs(int argc, char **argv) {
     int i;
-
+    
+    if (argc > 1)
+    {
+        fprintf(stderr, "Error: invalid command\n");
+        return -1;
+    }
     for (i = 0; i < NR_JOBS; i++) {
         if (shell->jobs[i] != NULL) {
             print_job_status(i);
@@ -400,8 +400,8 @@ int ft_jobs(int argc, char **argv) {
 }
 
 int ft_fg(int argc, char **argv) {
-    if (argc < 2) {
-        printf("usage: fg <pid>\n");
+    if (argc == 1 || argc > 2) {
+        printf("Error: invalid command\n");
         return -1;
     }
 
@@ -413,7 +413,7 @@ int ft_fg(int argc, char **argv) {
         job_id = atoi(argv[1] + 1);
         pid = get_pgid_by_job_id(job_id);
         if (pid < 0) {
-            printf("shell: fg %s: no such job\n", argv[1]);
+            fprintf(stderr ,"Error: invalid job\n");
             return -1;
         }
     } else {
@@ -421,7 +421,7 @@ int ft_fg(int argc, char **argv) {
     }
 
     if (kill(-pid, SIGCONT) < 0) {
-        printf("shell: fg %d: job not found\n", pid);
+       fprintf(stderr ,"Error: invalid job\n");
         return -1;
     }
 
@@ -444,7 +444,21 @@ int ft_fg(int argc, char **argv) {
     return 0;
 }
 
-int ft_exit() {
+int ft_exit(int argc) {
+    if (argc > 1)
+    {
+        fprintf(stderr, "Error: invalid command\n");
+        return -1;
+    }
+    for (int i = 0; i < NR_JOBS; i++) {
+        if (shell->jobs[i] != NULL) {
+            // if (shell->jobs[i]->mode == STATUS_SUSPENDED)
+            {
+                fprintf(stderr, "Error: there are suspended jobs\n");
+                return -1;
+            }
+        }
+    }
     printf("Goodbye!\n");
     exit(0);
 }
@@ -477,7 +491,7 @@ int ft_execute_builtin_command(struct process *proc) {
 
     switch (proc->type) {
         case COMMAND_EXIT:
-            ft_exit();
+            ft_exit(proc->argc);
             break;
         case COMMAND_CD:
             ft_cd(proc->argc, proc->argv);
