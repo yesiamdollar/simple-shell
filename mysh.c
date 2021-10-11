@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
+
 #define NR_JOBS 20
 #define PATH_BUFSIZE 1024
 #define COMMAND_BUFSIZE 1024
@@ -41,12 +42,6 @@
 #define PROC_FILTER_DONE 1
 #define PROC_FILTER_REMAINING 2
 
-#define COLOR_NONE "\033[m"
-#define COLOR_RED "\033[1;37;41m"
-#define COLOR_YELLOW "\033[1;33m"
-#define COLOR_CYAN "\033[0;36m"
-#define COLOR_GREEN "\033[0;32;32m"
-#define COLOR_GRAY "\033[1;30m"
 
 const char* STATUS_STRING[] = {
     "running",
@@ -73,6 +68,7 @@ struct process {
     struct process *next;
 };
 
+
 struct job {
     int id;
     struct process *root;
@@ -89,6 +85,15 @@ struct shell_info {
 };
 
 struct shell_info *shell;
+
+struct zero_leak
+{
+    char *s;
+    struct zero_leak *prev;
+    struct zero_leak *next;
+};
+
+struct zero_leak    *garbage;
 
 int get_job_id_by_pid(int pid) {
     int i;
@@ -343,15 +348,7 @@ int get_command_type(char *command) {
         return COMMAND_JOBS;
     } else if (strcmp(command, "fg") == 0) {
         return COMMAND_FG;
-    }/* else if (strcmp(command, "bg1") == 0) {
-        return COMMAND_BG;
-    } else if (strcmp(command, "kill") == 0) {
-        return COMMAND_KILL;
-    } else if (strcmp(command, "export") == 0) {
-        return COMMAND_EXPORT;
-    } else if (strcmp(command, "unset") == 0) {
-        return COMMAND_UNSET;
-    } */else {
+    } else {
         return COMMAND_EXTERNAL;
     }
 }
@@ -447,94 +444,6 @@ int ft_fg(int argc, char **argv) {
     return 0;
 }
 
-// int mysh_bg(int argc, char **argv) {
-//     if (argc < 2) {
-//         printf("usage: bg <pid>\n");
-//         return -1;
-//     }
-
-//     pid_t pid;
-//     int job_id = -1;
-
-//     if (argv[1][0] == '%') {
-//         job_id = atoi(argv[1] + 1);
-//         pid = get_pgid_by_job_id(job_id);
-//         if (pid < 0) {
-//             printf("shell: bg %s: no such job\n", argv[1]);
-//             return -1;
-//         }
-//     } else {
-//         pid = atoi(argv[1]);
-//     }
-
-//     if (kill(-pid, SIGCONT) < 0) {
-//         printf("shell: bg %d: job not found\n", pid);
-//         return -1;
-//     }
-
-//     if (job_id > 0) {
-//         set_job_status(job_id, STATUS_CONTINUED);
-//         print_job_status(job_id);
-//     }
-
-//     return 0;
-// }
-
-// int mysh_kill(int argc, char **argv) {
-//     if (argc < 2) {
-//         printf("usage: kill <pid>\n");
-//         return -1;
-//     }
-
-//     pid_t pid;
-//     int job_id = -1;
-
-//     if (argv[1][0] == '%') {
-//         job_id = atoi(argv[1] + 1);
-//         pid = get_pgid_by_job_id(job_id);
-//         if (pid < 0) {
-//             printf("shell: kill %s: no such job\n", argv[1]);
-//             return -1;
-//         }
-//         pid = -pid;
-//     } else {
-//         pid = atoi(argv[1]);
-//     }
-
-//     if (kill(pid, SIGKILL) < 0) {
-//         printf("shell: kill %d: job not found\n", pid);
-//         return 0;
-//     }
-
-//     if (job_id > 0) {
-//         set_job_status(job_id, STATUS_TERMINATED);
-//         print_job_status(job_id);
-//         if (wait_for_job(job_id) >= 0) {
-//             remove_job(job_id);
-//         }
-//     }
-
-//     return 1;
-// }
-
-// int mysh_export(int argc, char **argv) {
-//     if (argc < 2) {
-//         printf("usage: export KEY=VALUE\n");
-//         return -1;
-//     }
-
-//     return putenv(argv[1]);
-// }
-
-// int mysh_unset(int argc, char **argv) {
-//     if (argc < 2) {
-//         printf("usage: unset KEY\n");
-//         return -1;
-//     }
-
-//     return unsetenv(argv[1]);
-// }
-
 int ft_exit() {
     printf("Goodbye!\n");
     exit(0);
@@ -579,18 +488,6 @@ int ft_execute_builtin_command(struct process *proc) {
         case COMMAND_FG:
             ft_fg(proc->argc, proc->argv);
             break;
-        // case COMMAND_BG:
-        //     mysh_bg(proc->argc, proc->argv);
-        //     break;
-        // case COMMAND_KILL:
-        //     mysh_kill(proc->argc, proc->argv);
-        //     break;
-        // case COMMAND_EXPORT:
-        //     mysh_export(proc->argc, proc->argv);
-        //     break;
-        // case COMMAND_UNSET:
-        //     mysh_unset(proc->argc, proc->argv);
-        //     break;
         default:
             status = 0;
             break;
@@ -846,6 +743,24 @@ struct process* ft_parse_command_segment(char *segment) {
     return new_proc;
 }
 
+void    add_garabage(char *s)
+{
+    struct zero_leak *next;
+    if (garbage)
+    {
+        next = garbage;
+        while (next->next)
+            next = next->next;
+        next->next = malloc(sizeof(struct zero_leak));
+        next->next->s = s;
+        next->next->next = NULL;
+    }else{
+        garbage = malloc(sizeof(struct zero_leak));
+        garbage->s = s;
+        garbage->next = NULL;
+    }
+}
+
 int    pipe_check(char *head){
     while (*head){
         if (*head != '\0' && *head != ' ')
@@ -862,7 +777,6 @@ struct job* ft_parse_command(char *line) {
     struct process *root_proc = NULL, *proc = NULL;
     char *line_cursor = line, *c = line, *seg = NULL;
     int seg_len = 0, mode = FOREGROUND_EXECUTION;
-
     if (line[strlen(line) - 1] == '&') {
         mode = BACKGROUND_EXECUTION;
         line[strlen(line) - 1] = '\0';
@@ -872,14 +786,13 @@ struct job* ft_parse_command(char *line) {
         free(command);
         return NULL;
     }
+    int z = 0;
     while (1) {
         if (*c == '\0' || *c == '|') {
             if (*c == '|' && pipe_check(c + 1))
                 return NULL;
-            seg = (char*) malloc((seg_len + 1) * sizeof(char));
-            strncpy(seg, line_cursor, seg_len);
-            seg[seg_len] = '\0';
-
+            seg = strndup(line_cursor, seg_len);
+            add_garabage(seg);
             struct process* new_proc = ft_parse_command_segment(seg);
             if (!root_proc) {
                 root_proc = new_proc;
@@ -896,8 +809,6 @@ struct job* ft_parse_command(char *line) {
                 seg_len = 0;
                 continue;
             } else {
-                if (seg)
-                    free(seg);
                 break;
             }
         } else {
@@ -905,7 +816,6 @@ struct job* ft_parse_command(char *line) {
             c++;
         }
     }
-
     struct job *new_job = (struct job*) malloc(sizeof(struct job));
     new_job->root = root_proc;
     new_job->command = command;
@@ -968,7 +878,7 @@ void shell_loop() {
     char *line;
     struct job *job;
     int status = 1;
-
+    struct zero_leak *next;
     while (1) {
         print_promt();
         line = ft_read_line();
@@ -976,11 +886,21 @@ void shell_loop() {
             check_zombie();
             continue;
         }
+        garbage = NULL;
         job = ft_parse_command(line);
         free(line);
         if (job)
         {
             status = ft_launch_job(job);
+            if (garbage){
+                while (garbage){
+                    next = garbage->next;
+                    free(garbage->s);
+                    free(garbage);
+                    garbage = next;
+                }
+            }
+            
         }
         else
             fprintf(stderr, "Error: invalid command\n");
